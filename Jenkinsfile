@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        any {
-            image 'python:3.11'  // Use an official Python image
-            args '-u root'  // Run as root to install dependencies
-        }
-    }
+    agent any
 
     parameters {
         string(name: 'AD_USERNAME', description: 'Enter the AD username to move')
@@ -20,26 +15,31 @@ pipeline {
     stages {
         stage('Install Dependencies') {
             steps {
-                echo 'Installing dependencies...'
-                sh '''
-                    python3 -m pip install --upgrade pip
-                    python3 -m pip install ldap3
-                '''
+                script {
+                    echo 'Installing dependencies...'
+                    // Install Python3, pip, and the required dependencies via apt
+                    sh """
+                        sudo apt-get update
+                        sudo apt-get install -y python3 python3-pip python3-ldap3
+                        sudo apt-get clean
+                    """
+                }
             }
         }
 
         stage('Move AD User') {
             steps {
                 script {
+                    // Retrieve user input parameters
                     def username = params.AD_USERNAME
                     def target_ou = params.TARGET_OU
                     def server_ip = env.AD_SERVER
                     def ad_user = env.AD_USER
                     def ad_password = env.AD_PASSWORD
 
-                    // Run the Python script
+                    // Execute the Python script to move the AD user
                     sh """
-                        python3 move_user.py "${username}" "${target_ou}" "${server_ip}" "${ad_user}" "${ad_password}"
+                        python3 move_user.py "${username}" ${target_ou} ${server_ip} ${ad_user} ${ad_password}
                     """
                 }
             }
