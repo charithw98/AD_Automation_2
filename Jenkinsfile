@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        docker {
+        any {
             image 'python:3.11'  // Use an official Python image
             args '-u root'  // Run as root to install dependencies
         }
