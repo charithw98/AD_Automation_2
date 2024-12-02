@@ -17,11 +17,11 @@ pipeline {
             steps {
                 script {
                     echo 'Installing dependencies...'
-                    // Install Python3, pip, and the required dependencies via apt
+                    // Run installation commands as root
                     sh """
-                        sudo apt-get update
-                        sudo apt-get install -y python3 python3-pip python3-ldap3
-                        sudo apt-get clean
+                        apt-get update
+                        apt-get install -y python3 python3-pip python3-ldap3
+                        apt-get clean
                     """
                 }
             }
