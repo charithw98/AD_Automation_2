@@ -1,57 +1,55 @@
 pipeline {
-    agent any
-
-    parameters {
-        string(name: 'AD_USERNAME', description: 'Enter the AD username to move')
-        choice(name: 'TARGET_OU', choices: ['TestOU1', 'TestOU2'], description: 'Select the target OU')
+    agent {
+        any {
+            image 'jenkins/jenkins:lts'  // Ensure Jenkins is running in Docker
+            args '-u root'               // Run the container as root during this stage
+        }
     }
-
     environment {
-        AD_SERVER = '10.101.16.42'
-        AD_USER = 'tase'
-        AD_PASSWORD = 'Testuser@123'
+        CONTAINER_NAME = 'jenkins_container'  // Update this with your container's actual name
     }
-
     stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 script {
-                    echo 'Installing dependencies...'
-                    // Run installation commands with sudo as root
-                    sh """
-                        sudo apt-get update
-                        sudo apt-get install -y python3 python3-pip python3-ldap3
-                        sudo apt-get clean
-                    """
+                    echo "Accessing container as root and installing dependencies..."
+                    sh '''
+                    apt update &&
+                    apt install -y python3 python3-pip python3-ldap3 &&
+                    echo "Dependencies installed successfully"
+                    '''
                 }
+            }
+        }
+
+        stage('Verify Installation') {
+            steps {
+                sh '''
+                python3 -c "import ldap3; print(ldap3.__version__)"
+                '''
             }
         }
 
         stage('Move AD User') {
             steps {
-                script {
-                    // Retrieve user input parameters
-                    def username = params.AD_USERNAME
-                    def target_ou = params.TARGET_OU
-                    def server_ip = env.AD_SERVER
-                    def ad_user = env.AD_USER
-                    def ad_password = env.AD_PASSWORD
-
-                    // Execute the Python script to move the AD user
-                    sh """
-                        python3 move_user.py "${username}" ${target_ou} ${server_ip} ${ad_user} ${ad_password}
-                    """
-                }
+                echo "Proceeding with AD User operation..."
+                // Add your AD User script/commands here
             }
         }
     }
 
     post {
-        success {
-            echo "User '${params.AD_USERNAME}' moved successfully to '${params.TARGET_OU}'."
+        always {
+            echo "Build completed!"
         }
         failure {
-            echo "Failed to move the user '${params.AD_USERNAME}'. Check logs for details."
+            echo "Build failed! Check logs for details."
         }
     }
 }
